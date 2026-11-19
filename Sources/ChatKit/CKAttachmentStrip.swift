@@ -118,11 +118,7 @@ open class CKAttachmentStrip: UIScrollView {
     remove.accessibilityLabel = item.removeAccessibilityLabel
     remove.addAction(UIAction { [weak self] _ in self?.onRemove?(item.id) }, for: .touchUpInside)
     let surface = CKGlassSurface(interactive: true)
-    if let radius = style.cornerRadius {
-      surface.cornerConfiguration = .corners(radius: .fixed(max(0, radius)))
-    } else {
-      surface.cornerConfiguration = .capsule()
-    }
+    surface.setCorners(radius: style.cornerRadius)
     surface.tintColor = style.theme.tintColor
     surface.contentView.addSubview(button)
     surface.contentView.addSubview(remove)
