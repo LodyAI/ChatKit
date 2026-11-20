@@ -4,7 +4,8 @@ import UIKit
 /// Keep the glass mounted until its material has left, and reverse the same
 /// animator when visibility changes mid-flight instead of starting another one.
 open class CKGlassSurface: UIVisualEffectView {
-  private let glass: UIGlassEffect?
+  private let glass: UIVisualEffect?
+  private var capsule = false
   private var motion: UIViewPropertyAnimator?
   private var destination = false
   public private(set) var materialVisible = false
@@ -13,9 +14,13 @@ open class CKGlassSurface: UIVisualEffectView {
 
   public init(interactive: Bool = false, material: Bool = true) {
     if material {
-      let glass = UIGlassEffect(style: .regular)
-      glass.isInteractive = interactive
-      self.glass = glass
+      if #available(iOS 26.0, *) {
+        let glass = UIGlassEffect(style: .regular)
+        glass.isInteractive = interactive
+        self.glass = glass
+      } else {
+        glass = UIBlurEffect(style: .systemThinMaterial)
+      }
     } else {
       glass = nil
     }
@@ -27,6 +32,23 @@ open class CKGlassSurface: UIVisualEffectView {
   }
 
   public required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+  /// A fixed corner radius, or a capsule when `radius` is nil.
+  public func setCorners(radius: CGFloat?) {
+    if #available(iOS 26.0, *) {
+      cornerConfiguration = radius.map { .corners(radius: .fixed(max(0, $0))) } ?? .capsule()
+      return
+    }
+    capsule = radius == nil
+    layer.cornerCurve = .continuous
+    clipsToBounds = true
+    layer.cornerRadius = max(0, radius ?? min(bounds.width, bounds.height) / 2)
+  }
+
+  open override func layoutSubviews() {
+    super.layoutSubviews()
+    if capsule { layer.cornerRadius = min(bounds.width, bounds.height) / 2 }
+  }
 
   public func setVisible(_ visible: Bool, animated: Bool = true) {
     let animate = animated && window != nil && UIView.areAnimationsEnabled && !UIAccessibility.isReduceMotionEnabled
